@@ -2,6 +2,7 @@ import itertools
 import random
 import copy
 import gym
+import numpy as np
 
 
 class Deck:
@@ -17,7 +18,8 @@ class Deck:
         "is_null": gym.spaces.Discrete(2), # Whether or not there is a card present
         "color": gym.spaces.Discrete(len(colors)),
         "suit": gym.spaces.Discrete(len(suits)),
-        "rank": gym.spaces.Discrete(len(ranks))
+        #"rank": gym.spaces.Discrete(len(ranks))
+        "rank": gym.spaces.Box(low=1, high=len(ranks), dtype=np.int32, shape=(1,))
     })
 
 
@@ -90,12 +92,13 @@ class Deck:
         suit_idx = self.suits.index(suit)
         rank_idx = self.ranks.index(rank)
         color_idx = 0 if suit in ["h", "d"] else 1
-        return color_idx, suit_idx, rank_idx
+        return np.array((color_idx, suit_idx, rank_idx))
 
     def id_to_viz(self, card_id):
         string = self.id_to_str(card_id)
         suit, rank = string
-        return color, suit, int(rank)
+        color = "r" if suit in ["h", "d"] else "b"
+        return color, suit, rank
 
     def obs_to_viz(self, obs):
         color_idx, suit_idx, rank_idx = obs
