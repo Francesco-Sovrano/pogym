@@ -227,7 +227,7 @@ class BlackJack(gym.Env):
         return obs
 
 
-    def reset(self):
+    def reset(self, return_info=False):
         self.curr_game = 0
         self.curr_round = 0
         self.play_phase = 0
@@ -235,6 +235,9 @@ class BlackJack(gym.Env):
         self.obs = self.build_obs()
         # Due to how reset works, we do not use
         # the action selected directly after reset
+        if return_info:
+            return self.obs, {}
+
         return self.obs
 
 
