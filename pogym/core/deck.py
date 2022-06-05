@@ -8,20 +8,22 @@ import numpy as np
 class Deck:
     """An object that represents a collection of cards.
     A deck can represent a single deck or multiple decks"""
+
     # Spades, hearts, clubs, and diamonds
     colors = ["r", "b"]
     suits = ["h", "d", "c", "s"]
     # ace, 2, 3, .... jack, queen, king
     ranks = ["a", "2", "3", "4", "5", "6", "7", "8", "9", "10", "j", "q", "k"]
     num_unique_cards = len(suits) * len(ranks)
-    card_obs_space = gym.spaces.Dict({
-        "is_null": gym.spaces.Discrete(2), # Whether or not there is a card present
-        "color": gym.spaces.Discrete(len(colors)),
-        "suit": gym.spaces.Discrete(len(suits)),
-        #"rank": gym.spaces.Discrete(len(ranks))
-        "rank": gym.spaces.Box(low=1, high=len(ranks), dtype=np.int32, shape=(1,))
-    })
-
+    card_obs_space = gym.spaces.Dict(
+        {
+            "is_null": gym.spaces.Discrete(2),  # Whether or not there is a card present
+            "color": gym.spaces.Discrete(len(colors)),
+            "suit": gym.spaces.Discrete(len(suits)),
+            # "rank": gym.spaces.Discrete(len(ranks))
+            "rank": gym.spaces.Box(low=1, high=len(ranks), dtype=np.int32, shape=(1,)),
+        }
+    )
 
     def __init__(self, num_decks=1, shuffled=True):
         self.num_decks = num_decks
@@ -35,7 +37,7 @@ class Deck:
         self.discard = []
         if shuffled:
             random.shuffle(self.deck)
-        
+
         self._str_to_id = dict(zip(itertools.cycle(single_deck), self.card_ids))
         self._id_to_str = dict(zip(self.card_ids, itertools.cycle(single_deck)))
 
@@ -50,7 +52,7 @@ class Deck:
     def draw(self):
         """Draws a single card from the deck, returning
         the card id. Will error if the deck is empty, make sure
-        to check len(Deck.deck) before calling.""" 
+        to check len(Deck.deck) before calling."""
         card_id = self.deck.pop()
         self.in_play.append(card_id)
         return card_id
@@ -103,4 +105,3 @@ class Deck:
     def obs_to_viz(self, obs):
         color_idx, suit_idx, rank_idx = obs
         return self.colors[color_idx], self.suits[suit_idx], self.ranks[rank_idx]
-

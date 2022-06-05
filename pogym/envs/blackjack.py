@@ -15,7 +15,7 @@ class BlackJack(gym.Env):
         num_decks: The number of individual decks combined into a single deck.
             In Vegas, this is usually between four and eight.
         max_hits: The maximum number of rounds where the agent and dealer
-            can hit/stay. There is no max in real blackjack, however this 
+            can hit/stay. There is no max in real blackjack, however this
             would result in a very large observation space.
         games_per_episode: The number of games per episode. This must be set high
             for card-counting to have an effect. When set to one, the game
@@ -24,30 +24,56 @@ class BlackJack(gym.Env):
     Returns:
         A gym environment
     """
-    def __init__(self, bet_sizes=[0.2, 0.4, 0.6, 0.8, 1.0], num_decks=1, max_rounds=6, games_per_episode=20):
+
+    def __init__(
+        self,
+        bet_sizes=[0.2, 0.4, 0.6, 0.8, 1.0],
+        num_decks=1,
+        max_rounds=6,
+        games_per_episode=20,
+    ):
         self.deck = Deck(num_decks=num_decks)
         self.bet_sizes = bet_sizes
         self.max_rounds = max_rounds
         # Hit, stay, and bet amount
-        self.action_space = gym.spaces.Dict({
-            "hit_or_stay": gym.spaces.Discrete(2),
-            "bet_size": gym.spaces.Discrete(len(bet_sizes))
-        })
+        self.action_space = gym.spaces.Dict(
+            {
+                "hit_or_stay": gym.spaces.Discrete(2),
+                "bet_size": gym.spaces.Discrete(len(bet_sizes)),
+            }
+        )
         self.games_per_episode = games_per_episode
         self.curr_game = 0
         self.curr_round = 0
         self.curr_bet = 0
-        self.observation_space = gym.spaces.Dict({
-            "phase": gym.spaces.Discrete(3),
-            "dealer_hand": gym.spaces.Tuple(max_rounds * [Deck.card_obs_space]),
-            "player_hand": gym.spaces.Tuple(max_rounds * [Deck.card_obs_space]),
-        })
+        self.observation_space = gym.spaces.Dict(
+            {
+                "phase": gym.spaces.Discrete(3),
+                "dealer_hand": gym.spaces.Tuple(max_rounds * [Deck.card_obs_space]),
+                "player_hand": gym.spaces.Tuple(max_rounds * [Deck.card_obs_space]),
+            }
+        )
         self.dealer_hand = []
         self.player_hand = []
         self.play_phase = 0
 
     def hand_value(self, hand):
-        card_map = {"a":1, "1": 1, "2": 2, "3": 3, "4": 4, "5": 5, "6": 6, "7": 7, "8": 8, "9": 9, "10": 10, "j": 10, "q": 10, "k":10}
+        card_map = {
+            "a": 1,
+            "1": 1,
+            "2": 2,
+            "3": 3,
+            "4": 4,
+            "5": 5,
+            "6": 6,
+            "7": 7,
+            "8": 8,
+            "9": 9,
+            "10": 10,
+            "j": 10,
+            "q": 10,
+            "k": 10,
+        }
         value = 0
         has_ace = False
         for card in hand:
@@ -60,13 +86,13 @@ class BlackJack(gym.Env):
             # ace = 1 + 10
             value += 10
         return value
-            
+
     def step(self, action):
         # First round:
         #   curr_round == 0
         #   input action: select bet
         #   output obs: two player cards and one dealer card
-        # 
+        #
         # Hit round:
         #   curr_round > 0
         #   input action: hit
@@ -155,7 +181,7 @@ class BlackJack(gym.Env):
                     reward = 0
                     result = f"player ({player_value}) and dealer ({dealer_value}) bust"
 
-                # naturals 
+                # naturals
                 if player_natural and not dealer_natural:
                     reward = 1.5 * self.curr_bet
                     result = "player natural"
@@ -192,10 +218,9 @@ class BlackJack(gym.Env):
         else:
             return np.empty(0)
 
-
     def render(self):
         phase = "bet" if self.obs["phase"] == 0 else "play"
-        print(f"phase: {phase}") 
+        print(f"phase: {phase}")
         dealer = self.render_hand(self.obs["dealer_hand"])
         player = self.render_hand(self.obs["player_hand"])
         dealer_val = self.hand_value(self.dealer_hand)
@@ -203,29 +228,29 @@ class BlackJack(gym.Env):
         print(f"dealer hand (sum={dealer_val}):\n {dealer}")
         print(f"player hand (sum={player_val}):\n {player}")
 
-
     def build_obs(self):
         phase = np.array(self.play_phase)
 
         # Convert card ids to color, suit, rank
         dealer_hand = [np.array([1, *self.deck.id_to_obs(c)]) for c in self.dealer_hand]
         # Pad hand with empty cards
-        dealer_hand += [np.array([0, 0, 0, 0]) for i in range(self.max_rounds - len(self.dealer_hand))]
+        dealer_hand += [
+            np.array([0, 0, 0, 0])
+            for i in range(self.max_rounds - len(self.dealer_hand))
+        ]
         dealer_hand = np.stack(dealer_hand)
 
         # Convert card ids to color, suit, rank
         player_hand = [np.array([1, *self.deck.id_to_obs(c)]) for c in self.player_hand]
         # Pad hand with empty cards
-        player_hand += [np.array([0, 0, 0, 0]) for i in range(self.max_rounds - len(self.player_hand))]
+        player_hand += [
+            np.array([0, 0, 0, 0])
+            for i in range(self.max_rounds - len(self.player_hand))
+        ]
         player_hand = np.stack(player_hand)
 
-        obs = {
-            "phase": phase,
-            "dealer_hand": dealer_hand,
-            "player_hand": player_hand
-        }
+        obs = {"phase": phase, "dealer_hand": dealer_hand, "player_hand": player_hand}
         return obs
-
 
     def reset(self, return_info=False):
         self.curr_game = 0
@@ -241,28 +266,23 @@ class BlackJack(gym.Env):
         return self.obs
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     game = BlackJack()
     done = False
     obs = game.reset()
     action_dict = {"bet_size": 0, "hit_or_stay": 0}
     while not done:
         obs, reward, done, info = game.step(action_dict)
-        phase = obs['phase']
+        phase = obs["phase"]
         if phase == 0:
-            action = input(f'How much to bet? Input index: {game.bet_sizes} ')
+            action = input(f"How much to bet? Input index: {game.bet_sizes} ")
             action_dict = {"bet_size": int(action), "hit_or_stay": 0}
         else:
-            action = input(f'Hit (0) or stay (1)?')
+            action = input(f"Hit (0) or stay (1)?")
             action_dict = {"bet_size": 0, "hit_or_stay": int(action)}
 
-        #game.render()
+        # game.render()
         print(obs)
-        print(info['result'])
+        print(info["result"])
         if reward != 0:
             print(f"Got reward: {reward}")
-
-
-
-
-
