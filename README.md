@@ -7,12 +7,8 @@ Partially Observable Gym, or `pogym` is a collection of Partially Observable Mar
 2. **Laptop-sized tasks** - None of our environments have large observation spaces or require GPUs to render.
 3. **No overfitting** - It is possible for memoryless agents to receive high rewards on environments by memorizing the layout of each level. To avoid this, all environments are procedurally generated. 
 
-
 ## Environments
 The environments are split into set or sequence tasks. Ordering matters in sequence tasks (e.g. the order of the button presses in simon matters), and does not matter in set tasks (e.g. the "count" in blackjack does not change if you swap o<sub>t-1</sub> and o<sub>t-k</sub>).
-
-### Sequence Environments
-
 
 ### Set Environments
 * Memory/Concentration (partially implemented)
