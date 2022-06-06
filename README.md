@@ -22,10 +22,19 @@ The environments are split into set or sequence tasks. Ordering matters in seque
 ### Sequence Environments
 * RememberPrevObs (not implemented yet)
 * RememberFirstObs (not implemented yet)
-* Stateless Cartpole (partially implemented)
-* Noisy Pendulum (not implemented yet)
+* Stateless Cartpole
+* Stateless Pendulum (not implemented yet)
 * Treasure Hunt (not implemented yet)
 * Repeat After Me (partially implemented)
+
+## Contributing
+Make sure you run with precommit hooks:
+```bash
+pip install pre-commit
+git clone https://github.com/smorad/pogym
+cd pogym
+pre-commit install
+```
 
 
 ### Environment Descriptions
