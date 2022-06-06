@@ -39,9 +39,14 @@ class StatelessPendulum(PendulumEnv):
         options: Optional[dict] = None
     ) -> Union[gym.core.ObsType, Tuple[gym.core.ObsType, dict]]:
         if return_info:
-            init_obs, info = super().reset()
+            init_obs, info = super().reset(
+                seed=seed, return_info=return_info, options=options
+            )
             return init_obs[:-1], info
 
-        init_obs = super().reset()
-        # init_obs is [cos(theta), sin(theta), theta-dot (angular velocity)]
-        return init_obs[:-1]
+        else:
+            init_obs = super().reset(
+                seed=seed, return_info=return_info, options=options
+            )
+            # init_obs is [cos(theta), sin(theta), theta-dot (angular velocity)]
+            return init_obs[:-1]

@@ -1,6 +1,9 @@
-import gym
+from typing import Any, Dict, Optional, Tuple, Union
 
-from pogym.core.deck import Deck
+import gym
+import numpy as np
+
+from pogym.core.deck import CardRepr, Deck
 
 
 class HigherLower(gym.Env):
@@ -19,9 +22,9 @@ class HigherLower(gym.Env):
 
     def __init__(self, num_decks=1):
         self.num_decks = num_decks
-        self.deck = Deck(num_decks)
+        self.deck = Deck(num_decks, card_repr=CardRepr.RANKS)
         self.action_space = gym.spaces.Discrete(2)
-        self.observation_space = Deck.card_obs_space
+        self.observation_space = self.deck.card_obs_space
         self.value_map = dict(zip(self.deck.ranks, range(len(self.deck.ranks))))
         self.deck_size = len(self.deck)
 
@@ -56,16 +59,24 @@ class HigherLower(gym.Env):
         }
 
         self.curr_card = next_card
-        obs = self.deck.id_to_obs(self.curr_card)
+        obs = self.deck.id_to_obs(self.curr_card).item()
 
         return obs, reward, done, info
 
-    def reset(self, return_info=False):
+    def reset(
+        self,
+        *,
+        seed: Optional[int] = None,
+        return_info: bool = False,
+        options: Optional[dict] = None,
+    ) -> Union[gym.core.ObsType, Tuple[gym.core.ObsType, Dict[str, Any]]]:
+        if seed is not None:
+            np.random.seed(seed)
+
         self.deck.reset()
         self.curr_card = self.deck.draw()
-        obs = self.deck.id_to_obs(self.curr_card)
-
+        obs = self.deck.id_to_obs(self.curr_card).item()
         if return_info:
-            obs, {}
+            return obs, {}
 
         return obs

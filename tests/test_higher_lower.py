@@ -11,12 +11,12 @@ class TestHigherLower(unittest.TestCase):
     def test_episode_higher(self):
         env = HigherLower()
         done = False
-        obs_list = [env.reset()[-1]]
+        obs_list = [env.reset()]
         reward_list = []
         decklen = 52
         while not done:
             obs, reward, done, info = env.step(0)
-            obs_list.append(obs[-1])
+            obs_list.append(obs)
             reward_list.append(reward)
         pairs = list(zip(obs_list[:-1], obs_list[1:]))
         pred_correct = [j > i for i, j in pairs]

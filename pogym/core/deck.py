@@ -81,18 +81,10 @@ class Deck:
     # ace, 2, 3, .... jack, queen, king
     ranks = ["a", "2", "3", "4", "5", "6", "7", "8", "9", "10", "j", "q", "k"]
     num_unique_cards = len(suits) * len(ranks)
-    card_obs_space = gym.spaces.Tuple(
-        (
-            gym.spaces.Discrete(len(colors)),  # color
-            gym.spaces.Discrete(len(suits)),  # suit
-            gym.spaces.Discrete(len(ranks)),  # rank
-        )
-    )
-    rank_card_obs_space = gym.spaces.Discrete(len(ranks))
 
     def get_obs_space(self):
         if self.card_repr == CardRepr.FULL:
-            self.card_obs_space = gym.spaces.Tuple(
+            return gym.spaces.Tuple(
                 (
                     gym.spaces.Discrete(len(self.colors)),  # color
                     gym.spaces.Discrete(len(self.suits)),  # suit
@@ -100,14 +92,14 @@ class Deck:
                 )
             )
         elif self.card_repr == CardRepr.SUITS_AND_RANKS:
-            self.card_obs_space = gym.spaces.Tuple(
+            return gym.spaces.Tuple(
                 (
                     gym.spaces.Discrete(len(self.suits)),  # suit
                     gym.spaces.Discrete(len(self.ranks)),  # rank
                 )
             )
         elif self.card_repr == CardRepr.RANKS:
-            self.card_obs_space = gym.spaces.Discrete(len(self.ranks))
+            return gym.spaces.Discrete(len(self.ranks))
 
     def __init__(self, num_decks=1, card_repr: CardRepr = CardRepr.FULL):
         self.num_decks = num_decks
@@ -128,6 +120,7 @@ class Deck:
         self._val_to_str = dict(zip(self.card_values, itertools.cycle(single_deck)))
 
         self._id_to_val = dict(zip(self.card_ids, itertools.cycle(self.card_values)))
+        self.card_obs_space = self.get_obs_space()
 
     def __len__(self):
         return len(self.deck)

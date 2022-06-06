@@ -45,6 +45,14 @@ class StatelessCartPole(CartPoleEnv):
         return_info: bool = False,
         options: Optional[dict] = None
     ) -> Union[gym.core.ObsType, Tuple[gym.core.ObsType, dict]]:
-        init_obs = super().reset()
-        # init_obs is [x-pos, x-veloc, angle, angle-veloc]
-        return np.array([init_obs[0], init_obs[2]])
+        if return_info:
+            init_obs, info = super().reset(
+                seed=seed, return_info=return_info, options=options
+            )
+            return np.array([init_obs[0], init_obs[2]]), info
+        else:
+            init_obs = super().reset(
+                seed=seed, return_info=return_info, options=options
+            )
+            # init_obs is [x-pos, x-veloc, angle, angle-veloc]
+            return np.array([init_obs[0], init_obs[2]])

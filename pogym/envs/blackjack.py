@@ -81,11 +81,11 @@ class BlackJack(gym.Env):
             {
                 "phase": gym.spaces.Discrete(3),
                 "dealer_hand": gym.spaces.Tuple(
-                    max_rounds * [Deck.rank_card_obs_space]
+                    max_rounds * [self.deck.card_obs_space]
                 ),
                 "dealer_hand_cards_in_play": gym.spaces.MultiBinary(max_rounds),
                 "player_hand": gym.spaces.Tuple(
-                    max_rounds * [Deck.rank_card_obs_space]
+                    max_rounds * [self.deck.card_obs_space]
                 ),
                 "player_hand_cards_in_play": gym.spaces.MultiBinary(max_rounds),
             }
@@ -206,7 +206,6 @@ class BlackJack(gym.Env):
             done = True
             result = "deck empty, episode over"
 
-        print(self.action_phase)
         try:
             game_done = False
             if self.action_phase == Phase.BET:
