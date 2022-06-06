@@ -12,3 +12,9 @@ class TestBlackjack(unittest.TestCase):
         b = BlackJack()
         a = {"hit": 1, "bet_size": 1}
         [b.step(a) for i in range(10)]
+
+    def test_render(self):
+        b = BlackJack()
+        a = {"hit": 1, "bet_size": 1}
+        [b.step(a) for i in range(10)]
+        b.render()
