@@ -23,7 +23,7 @@ The environments are split into set or sequence tasks. Ordering matters in seque
 * RememberPrevObs (not implemented yet)
 * RememberFirstObs (not implemented yet)
 * Stateless Cartpole (partially implemented)
-* Stateless Pendulum (not implemented yet)
+* Noisy Pendulum (not implemented yet)
 * Treasure Hunt (not implemented yet)
 * Repeat After Me (partially implemented)
 
@@ -43,6 +43,8 @@ Output the t-k<sup>th</sup> observation for a reward
 Output the zeroth observation for a reward
 #### Stateless Cartpole
 Classic cartpole, except the velocity and angular velocity magnitudes are hidden. The agent must use memory to differentiate position into velocity.
+#### Noisy Pendulum
+Classic pendulum, but the observations are corrupted with large amounts of gaussian noise.
 #### Treasure Hunt
 The agent is placed in an open square and must search for a treasure. With memory, the agent can remember where it has been and complete the episode faster.
 #### Repeat After Me
