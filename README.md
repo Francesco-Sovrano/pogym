@@ -25,7 +25,7 @@ The environments are split into set or sequence tasks. Ordering matters in seque
 * Stateless Cartpole
 * Stateless Pendulum (not implemented yet)
 * Treasure Hunt (not implemented yet)
-* Repeat After Me (partially implemented)
+* Repeat Backwards
 
 ## Contributing
 Make sure you run with precommit hooks:
@@ -56,5 +56,5 @@ Classic cartpole, except the velocity and angular velocity magnitudes are hidden
 Classic pendulum, but the observations are corrupted with large amounts of gaussian noise.
 #### Treasure Hunt
 The agent is placed in an open square and must search for a treasure. With memory, the agent can remember where it has been and complete the episode faster.
-#### Repeat After Me
-The agent will receive k observations then must repeat them backwards.
+#### Repeat Backwards
+The agent will receive k observations then must repeat them in reverse order.
