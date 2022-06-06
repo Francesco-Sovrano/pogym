@@ -16,7 +16,7 @@ The environments are split into set or sequence tasks. Ordering matters in seque
 * Baccarat (not implemented yet)
 * Higher/Lower
 * Battleship (not implemented yet)
-* Multiarmed Bandit (not implemented yet)
+* Multiarmed Bandit
 * Minesweeper (not implemented yet)
 
 ### Sequence Environments
