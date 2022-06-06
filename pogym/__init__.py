@@ -5,6 +5,7 @@ import gym
 
 from pogym.envs.blackjack import BlackJack
 from pogym.envs.higher_lower import HigherLower
+from pogym.envs.repeat_backwards import RepeatBackwards
 from pogym.envs.stateless_cartpole import StatelessCartPole
 from pogym.envs.stateless_pendulum import StatelessPendulum
 
@@ -17,6 +18,7 @@ ALL_ENVS: Dict[gym.Env, Dict[str, Any]] = {
     StatelessPendulum: {
         "id": "pogym-StatelessPendulum-v0",
     },
+    RepeatBackwards: {"id": "pogym-RepeatBackwards-v0"},
 }
 
 for e, v in ALL_ENVS.items():
