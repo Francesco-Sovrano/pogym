@@ -7,4 +7,6 @@ from pogym import ALL_ENVS
 class TestEnvs:
     @pytest.mark.parametrize("env", ALL_ENVS)
     def test_no_warn(self, env):
-        check_env(env())
+        e = env()
+        e.reset()
+        check_env(e)
