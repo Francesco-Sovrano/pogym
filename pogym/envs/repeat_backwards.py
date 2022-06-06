@@ -35,6 +35,7 @@ class RepeatBackwards(gym.Env):
                 gym.spaces.Discrete(num_buttons),
             )
         )
+        self.mode = Mode.WATCH
 
     def cycle(self):
         button = self.sys_seq.pop()
