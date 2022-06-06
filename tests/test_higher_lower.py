@@ -1,11 +1,12 @@
-import unittest
 import math
+import unittest
+
 from pogym.envs.higher_lower import HigherLower
 
 
 class TestHigherLower(unittest.TestCase):
     def test_init(self):
-        env = HigherLower()
+        HigherLower()
 
     def test_episode_higher(self):
         env = HigherLower()

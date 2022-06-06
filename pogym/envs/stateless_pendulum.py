@@ -1,12 +1,12 @@
 # Inspired by ray rllib at
 # https://github.com/ray-project/ray/blob/master/rllib/examples/env/stateless_pendulum.py
 
-from typing import Tuple, Union, Optional
-from gym.spaces import Box
-import numpy as np
-import gym
+from typing import Optional, Tuple, Union
 
+import gym
+import numpy as np
 from gym.envs.classic_control import PendulumEnv
+from gym.spaces import Box
 
 
 class StatelessPendulum(PendulumEnv):

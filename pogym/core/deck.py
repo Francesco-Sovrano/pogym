@@ -1,6 +1,7 @@
+import copy
 import itertools
 import random
-import copy
+
 import gym
 import numpy as np
 

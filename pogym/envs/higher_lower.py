@@ -1,5 +1,4 @@
 import gym
-import numpy as np
 
 from pogym.core.deck import Deck
 

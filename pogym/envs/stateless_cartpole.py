@@ -1,10 +1,12 @@
 # Inspired by ray rllib at
 # https://github.com/ray-project/ray/blob/master/rllib/examples/env/stateless_cartpole.py
 
-from gym.spaces import Box
-import numpy as np
+from typing import Optional, Tuple, Union
 
+import gym
+import numpy as np
 from gym.envs.classic_control import CartPoleEnv
+from gym.spaces import Box
 
 
 class StatelessCartPole(CartPoleEnv):
@@ -29,12 +31,20 @@ class StatelessCartPole(CartPoleEnv):
 
         self.observation_space = Box(low=-high, high=high, dtype=np.float32)
 
-    def step(self, action):
+    def step(
+        self, action: gym.core.ActType
+    ) -> Tuple[gym.core.ObsType, float, bool, dict]:
         next_obs, reward, done, info = super().step(action)
         # next_obs is [x-pos, x-veloc, angle, angle-veloc]
         return np.array([next_obs[0], next_obs[2]]), reward, done, info
 
-    def reset(self):
+    def reset(
+        self,
+        *,
+        seed: Optional[int] = None,
+        return_info: bool = False,
+        options: Optional[dict] = None
+    ) -> Union[gym.core.ObsType, Tuple[gym.core.ObsType, dict]]:
         init_obs = super().reset()
         # init_obs is [x-pos, x-veloc, angle, angle-veloc]
         return np.array([init_obs[0], init_obs[2]])

@@ -113,7 +113,6 @@ class BlackJack(gym.Env):
         reward = 0
         done = False
         game_done = False
-        dealer_hit = False
         need_obs = True
         player_hit = action["hit_or_stay"] == 0
         # Whether we are betting (0) or playing (1)
@@ -278,7 +277,7 @@ if __name__ == "__main__":
             action = input(f"How much to bet? Input index: {game.bet_sizes} ")
             action_dict = {"bet_size": int(action), "hit_or_stay": 0}
         else:
-            action = input(f"Hit (0) or stay (1)?")
+            action = input("Hit (0) or stay (1)?")
             action_dict = {"bet_size": 0, "hit_or_stay": int(action)}
 
         # game.render()

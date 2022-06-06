@@ -1,11 +1,14 @@
-import gym
 import inspect
+from typing import Any, Dict
+
+import gym
+
 from pogym.envs.blackjack import BlackJack
 from pogym.envs.higher_lower import HigherLower
 from pogym.envs.stateless_cartpole import StatelessCartPole
 from pogym.envs.stateless_pendulum import StatelessPendulum
 
-ALL_ENVS = {
+ALL_ENVS: Dict[gym.Env, Dict[str, Any]] = {
     BlackJack: {
         "id": "pogym-Blackjack-v0",
     },
@@ -17,6 +20,5 @@ ALL_ENVS = {
 }
 
 for e, v in ALL_ENVS.items():
-    gym.envs.register(
-        entry_point=":".join([inspect.getmodule(e).__name__, e.__name__]), **v
-    )
+    mod_name = inspect.getmodule(e).__name__  # type: ignore
+    gym.envs.register(entry_point=":".join([mod_name, e.__name__]), **v)
