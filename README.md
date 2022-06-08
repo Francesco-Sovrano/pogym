@@ -52,6 +52,12 @@ pre-commit install
 
 
 ### Environment Descriptions
+#### [GridDrive](pogym/envs/grid_drive/)
+GridDrive is a 15×15 grid of cells, where every cell represents a different type of road (see Figure 2, left), with base types (e.g. motorway, school road, city) combined with other modifiers (roadworks, accidents, weather). 
+Each vehicle will have a set of properties that define which type of vehicle they are (emergency, civilian, worker, etc). 
+Complex combinations of these properties will define a strict speed limit for each cell, according to a culture (a particular type of argumentation framework).
+Indeed, the goal of this environment is to test the behaviour of RL algorithms when increasing the complexity (i.e. number of exceptions) of the regulation/culture governing the environment.
+For more detail read [this](pogym/envs/grid_drive/).
 #### BlackJack
 Casino blackjack, but unlike other environments the game is not over after the hand is dealt. The game continues until the deck(s) of cards are exhausted. The agent should learn to maintain a "count" of the cards it has seen. Using memory, it can infer what cards remain in the deck, and adjust the bet accordingly to maximize return.
 #### Baccarat
