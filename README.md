@@ -29,8 +29,20 @@ The environments are split into set or sequence tasks. Ordering matters in seque
 * Bipedal Walker
 
 ## Contributing
-Make sure you run with precommit hooks:
+Steps to follow:
+1. Fork this repo in github
+2. Clone your fork to your machine
+3. Move your environment into the forked repo
+4. Install precommit in the fork (see below)
+5. Write a unittest in `tests/`, see other tests for examples
+6. Add your environment to `ALL_ENVS` in `pogym/__init__.py`
+7. Make sure you don't break any tests by running `pytest tests/`
+8. Git commit and push to your fork
+9. Open a pull request on github
+
+
 ```bash
+# Step 4. Install pre-commit in the fork
 pip install pre-commit
 git clone https://github.com/smorad/pogym
 cd pogym
