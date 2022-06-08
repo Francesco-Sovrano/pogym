@@ -3,6 +3,7 @@ from typing import Any, Dict
 
 import gym
 
+from pogym.envs.bipedal_walker import BipedalWalker
 from pogym.envs.blackjack import BlackJack
 from pogym.envs.higher_lower import HigherLower
 from pogym.envs.repeat_backwards import RepeatBackwards
@@ -19,6 +20,7 @@ ALL_ENVS: Dict[gym.Env, Dict[str, Any]] = {
         "id": "pogym-StatelessPendulum-v0",
     },
     RepeatBackwards: {"id": "pogym-RepeatBackwards-v0"},
+    BipedalWalker: {"id": "pogym-BipedalWalker-v0"},
 }
 
 for e, v in ALL_ENVS.items():
