@@ -9,6 +9,7 @@ from pogym.envs.higher_lower import HigherLower
 from pogym.envs.repeat_backwards import RepeatBackwards
 from pogym.envs.stateless_cartpole import StatelessCartPole
 from pogym.envs.stateless_pendulum import StatelessPendulum
+from pogym.envs.grid_drive import GridDrive
 
 ALL_ENVS: Dict[gym.Env, Dict[str, Any]] = {
     BlackJack: {
@@ -21,6 +22,7 @@ ALL_ENVS: Dict[gym.Env, Dict[str, Any]] = {
     },
     RepeatBackwards: {"id": "pogym-RepeatBackwards-v0"},
     BipedalWalker: {"id": "pogym-BipedalWalker-v0"},
+    GridDrive: {"id": 'pogym-GridDrive-v0'},
 }
 
 for e, v in ALL_ENVS.items():

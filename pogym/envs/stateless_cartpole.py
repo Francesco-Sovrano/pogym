@@ -32,8 +32,8 @@ class StatelessCartPole(CartPoleEnv):
         self.observation_space = Box(low=-high, high=high, dtype=np.float32)
 
     def step(
-        self, action: gym.core.ActType
-    ) -> Tuple[gym.core.ObsType, float, bool, dict]:
+        self, action
+    ):
         next_obs, reward, done, info = super().step(action)
         # next_obs is [x-pos, x-veloc, angle, angle-veloc]
         return np.array([next_obs[0], next_obs[2]]), reward, done, info
@@ -44,7 +44,7 @@ class StatelessCartPole(CartPoleEnv):
         seed: Optional[int] = None,
         return_info: bool = False,
         options: Optional[dict] = None
-    ) -> Union[gym.core.ObsType, Tuple[gym.core.ObsType, dict]]:
+    ):
         if return_info:
             init_obs, info = super().reset(
                 seed=seed, return_info=return_info, options=options

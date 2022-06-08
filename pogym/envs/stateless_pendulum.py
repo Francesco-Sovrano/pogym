@@ -25,8 +25,8 @@ class StatelessPendulum(PendulumEnv):
         self.observation_space = Box(low=-high, high=high, dtype=np.float32)
 
     def step(
-        self, action: gym.core.ActType
-    ) -> Tuple[gym.core.ObsType, float, bool, dict]:
+        self, action
+    ):
         next_obs, reward, done, info = super().step(action)
         # next_obs is [cos(theta), sin(theta), theta-dot (angular velocity)]
         return next_obs[:-1], reward, done, info
@@ -37,7 +37,7 @@ class StatelessPendulum(PendulumEnv):
         seed: Optional[int] = None,
         return_info: bool = False,
         options: Optional[dict] = None
-    ) -> Union[gym.core.ObsType, Tuple[gym.core.ObsType, dict]]:
+    ):
         if return_info:
             init_obs, info = super().reset(
                 seed=seed, return_info=return_info, options=options

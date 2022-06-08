@@ -73,7 +73,7 @@ class RepeatBackwards(gym.Env):
         seed: Optional[int] = None,
         return_info: bool = False,
         options: Optional[dict] = None,
-    ) -> Union[gym.core.ObsType, Tuple[gym.core.ObsType, Dict[str, Any]]]:
+    ):
         if seed is not None:
             np.random.seed(seed)
         self.sys_seq = np.random.randint(
