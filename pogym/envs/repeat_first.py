@@ -28,8 +28,8 @@ class RepeatFirst(gym.Env):
             )
         )
 
-    def make_obs(self, button, is_start=False):
-        return np.array([int(is_start), button])
+    def make_obs(self, card, is_start=False):
+        return np.array([int(is_start), card])
 
     def step(self, action):
         done = False
@@ -40,7 +40,12 @@ class RepeatFirst(gym.Env):
             reward = 0
             done = True
 
-        obs = self.deck.show("player", ["ranks"])[0, -1]
+        if len(self.deck) == 1:
+            done = True
+
+        self.deck.deal("player", 1)
+        card = self.deck.show("player", ["ranks_idx"])[0, -1]
+        obs = self.make_obs(card)
         self.deck.discard_hands("player")
 
         info = {}
@@ -58,7 +63,7 @@ class RepeatFirst(gym.Env):
             np.random.seed(seed)
         self.deck.reset()
         self.deck.deal("player", 1)
-        self.card = self.deck.show("player", ["ranks"]).item()
+        self.card = self.deck.show("player", ["ranks_idx"])[0, -1]
         obs = self.make_obs(self.card, is_start=True)
         if return_info:
             return obs, {}
