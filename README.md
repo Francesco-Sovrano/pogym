@@ -23,7 +23,7 @@ The environments are split into set or sequence tasks. Ordering matters in seque
 * RememberPrevObs (not implemented yet)
 * RepeatFirst
 * Stateless Cartpole
-* Stateless Pendulum (not implemented yet)
+* Stateless Pendulum
 * Treasure Hunt (not implemented yet)
 * Repeat Backwards
 
