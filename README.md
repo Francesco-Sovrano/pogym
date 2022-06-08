@@ -20,6 +20,7 @@ The environments are split into set or sequence tasks. Ordering matters in seque
 * Minesweeper (not implemented yet)
 
 ### Sequence Environments
+* [GridDrive](pogym/envs/grid_drive/)
 * Repeat Previous
 * Repeat First
 * Repeat Backwards
