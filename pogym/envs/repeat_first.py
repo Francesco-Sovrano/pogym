@@ -3,52 +3,45 @@ from typing import Any, Dict, Optional, Tuple, Union
 import gym
 import numpy as np
 
+from pogym.core.deck import Deck
+
 
 class RepeatFirst(gym.Env):
-    """A game where the agent must repeat the first observation
+    """A game where the agent must repeat the rank of the first card it saw
 
     Args:
-        game_len: The maximum length of an episode in timesteps
-        num_buttons: The number of possible observations
+        num_decks: The number of decks to cycle through, which determines
+            episode length
 
     Returns:
         A gym environment
     """
 
-    def __init__(self, num_buttons=4, game_len=64):
-        self.num_buttons = num_buttons
-        self.game_len = game_len
-        self.action_space = gym.spaces.Discrete(num_buttons)
+    def __init__(self, num_decks=1):
+        self.deck = Deck(num_decks)
+        self.deck.add_players("player")
+        self.action_space = self.deck.get_obs_space(["ranks"])
         self.observation_space = gym.spaces.Tuple(
             (
                 gym.spaces.Discrete(2),
-                gym.spaces.Discrete(num_buttons),
+                self.action_space,
             )
         )
-
-    def cycle(self):
-        button = self.sys_seq.pop()
-        self.watched_seq.append(button)
-        return button
-
-    def uncycle(self, action):
-        button = self.watched_seq.popleft()
-        done = len(self.watched_seq) == 0
-        return action == button, done
 
     def make_obs(self, button, is_start=False):
         return np.array([int(is_start), button])
 
     def step(self, action):
         done = False
-        reward_scale = 1 / self.game_len
-        if action == self.button:
+        reward_scale = 1 / self.deck.num_cards
+        if action == self.card:
             reward = reward_scale
         else:
             reward = 0
             done = True
 
-        obs = self.make_obs(np.random.randint(self.num_buttons))
+        obs = self.deck.show("player", ["ranks"])[0, -1]
+        self.deck.discard_hands("player")
 
         info = {}
 
@@ -63,8 +56,10 @@ class RepeatFirst(gym.Env):
     ) -> Union[gym.core.ObsType, Tuple[gym.core.ObsType, Dict[str, Any]]]:
         if seed is not None:
             np.random.seed(seed)
-        self.button = np.random.randint(self.num_buttons)
-        obs = self.make_obs(self.button, is_start=True)
+        self.deck.reset()
+        self.deck.deal("player", 1)
+        self.card = self.deck.show("player", ["ranks"]).item()
+        obs = self.make_obs(self.card, is_start=True)
         if return_info:
             return obs, {}
 
