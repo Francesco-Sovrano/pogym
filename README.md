@@ -20,8 +20,8 @@ The environments are split into set or sequence tasks. Ordering matters in seque
 * Minesweeper (not implemented yet)
 
 ### Sequence Environments
-* RememberPrevObs (not implemented yet)
-* RepeatFirst
+* Repeat Previous
+* Repeat First
 * Stateless Cartpole
 * Stateless Pendulum
 * Treasure Hunt (not implemented yet)
@@ -46,9 +46,9 @@ One-player battleship. Select a gridsquare to launch an attack, and receive conf
 Over an episode, solve a multiarmed bandit problem by maximizing the expected reward. The agent should use memory to keep a running mean and variance of bandits.
 #### Minesweeper
 Classic minesweeper, but with reduced vision range. The agent only has vision of the surroundings near its last sweep. The agent must use memory to remember where the bombs are
-#### RememberPrevObs
+#### Remember Previous
 Output the t-k<sup>th</sup> observation for a reward
-#### RepeatFirst
+#### Repeat First
 Output the zeroth observation for a reward
 #### Stateless Cartpole
 Classic cartpole, except the velocity and angular velocity magnitudes are hidden. The agent must use memory to differentiate position into velocity.
