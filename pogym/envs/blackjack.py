@@ -1,11 +1,10 @@
-import copy
 import enum
 from typing import Any, Dict, Optional, Tuple, Union
 
 import gym
 import numpy as np
 
-from pogym.core.deck import CardRepr, Deck, DeckEmptyError
+from pogym.core.deck import Deck, DeckEmptyError
 
 
 class Phase(enum.IntEnum):
@@ -17,6 +16,36 @@ class Phase(enum.IntEnum):
     PLAY = 2
     # Player receives the final cards (for counting) and the reward
     PAYOUT = 3
+
+
+def hand_value(hand):
+    card_map = {
+        "a": 1,
+        "1": 1,
+        "2": 2,
+        "3": 3,
+        "4": 4,
+        "5": 5,
+        "6": 6,
+        "7": 7,
+        "8": 8,
+        "9": 9,
+        "10": 10,
+        "j": 10,
+        "q": 10,
+        "k": 10,
+    }
+    value = 0
+    has_ace = False
+    for rank in hand:
+        if rank == "a":
+            has_ace = True
+        value += card_map[rank]
+
+    if value < 11 and has_ace:
+        # ace = 1 + 10
+        value += 10
+    return value
 
 
 class BlackJack(gym.Env):
@@ -40,23 +69,6 @@ class BlackJack(gym.Env):
         A gym environment
     """
 
-    card_map = {
-        "a": 1,
-        "1": 1,
-        "2": 2,
-        "3": 3,
-        "4": 4,
-        "5": 5,
-        "6": 6,
-        "7": 7,
-        "8": 8,
-        "9": 9,
-        "10": 10,
-        "j": 10,
-        "q": 10,
-        "k": 10,
-    }
-
     def __init__(
         self,
         bet_sizes=[0.2, 0.4, 0.6, 0.8, 1.0],
@@ -64,9 +76,14 @@ class BlackJack(gym.Env):
         max_rounds=6,
         games_per_episode=20,
     ):
-        self.deck = Deck(num_decks=num_decks, card_repr=CardRepr.RANKS)
         self.bet_sizes = bet_sizes
         self.max_rounds = max_rounds
+
+        self.deck = Deck(num_decks=num_decks)
+        self.deck.define_hand_value(hand_value, ["ranks"])
+        self.deck.add_players("dealer", "player")
+        card_obs_space = self.deck.get_obs_space(["ranks"])
+
         # Hit, stay, and bet amount
         self.action_space = gym.spaces.Dict(
             {
@@ -80,58 +97,40 @@ class BlackJack(gym.Env):
         self.observation_space = gym.spaces.Dict(
             {
                 "phase": gym.spaces.Discrete(3),
-                "dealer_hand": gym.spaces.Tuple(
-                    max_rounds * [self.deck.card_obs_space]
-                ),
+                "dealer_hand": gym.spaces.Tuple(max_rounds * [card_obs_space]),
                 "dealer_hand_cards_in_play": gym.spaces.MultiBinary(max_rounds),
-                "player_hand": gym.spaces.Tuple(
-                    max_rounds * [self.deck.card_obs_space]
-                ),
+                "player_hand": gym.spaces.Tuple(max_rounds * [card_obs_space]),
                 "player_hand_cards_in_play": gym.spaces.MultiBinary(max_rounds),
             }
         )
-        self.dealer_hand = []
-        self.player_hand = []
         self.action_phase = Phase.BET
 
-    def hand_value(self, hand):
-        value = 0
-        has_ace = False
-        for card in hand:
-            suit, rank = self.deck.id_to_str(card)
-            if rank == "a":
-                has_ace = True
-            value += self.card_map[rank]
-
-        if value < 11 and has_ace:
-            # ace = 1 + 10
-            value += 10
-        return value
-
     def bet(self, action):
-        # Take the previous action (bet)
-        self.curr_bet = self.bet_sizes[action["bet_size"]]
-        result = "player and dealer draw cards"
+        # In bet action mode, we don't do anything
+        # we inform the player to place a bet
+        # which we set during the deal phase
+        result = f"placed bet of {self.curr_bet}"
         return result
 
     def deal(self, action):
         # First round, serve the cards
+        # TODO: Do not take bet twice...
         self.curr_bet = self.bet_sizes[action["bet_size"]]
-        self.player_hand += [self.deck.draw(), self.deck.draw()]
-        self.dealer_hand += [self.deck.draw()]
+        self.deck.deal("player", 2)
+        self.deck.deal("dealer", 1)
 
     def play(self, action):
         player_hit = action["hit"]
         if player_hit:
             # Hit
-            self.player_hand += [self.deck.draw()]
+            self.deck.deal("player", 1)
             result = "player hits"
 
-        player_value = self.hand_value(self.player_hand)
+        player_value = self.deck.value("player")
         player_bust = player_value > 21
         player_blackjack = player_value == 21
-        player_natural = player_blackjack and len(self.player_hand) == 2
-        player_max_cards = len(self.player_hand) == self.max_rounds
+        player_natural = player_blackjack and self.deck.hand_size("player") == 2
+        player_max_cards = self.deck.hand_size("player") == self.max_rounds
 
         game_done = (
             not player_hit or player_bust or player_blackjack or player_max_cards
@@ -142,16 +141,16 @@ class BlackJack(gym.Env):
         dealer_plays = (not player_bust and not player_hit) or player_blackjack
 
         if dealer_plays:
-            dealer_value = self.hand_value(self.dealer_hand)
-            while dealer_value < 17 and len(self.dealer_hand) < self.max_rounds:
-                self.dealer_hand += [self.deck.draw()]
-                dealer_value = self.hand_value(self.dealer_hand)
+            dealer_value = self.deck.value("dealer")
+            while dealer_value < 17 and self.deck.hand_size("dealer") < self.max_rounds:
+                self.deck.deal("dealer", 1)
+                dealer_value = self.deck.value("dealer")
         else:
-            dealer_value = self.hand_value(self.dealer_hand)
+            dealer_value = self.deck.value("dealer")
 
         dealer_bust = dealer_value > 21
         dealer_blackjack = dealer_value == 21
-        dealer_natural = dealer_blackjack and len(self.player_hand) == 2
+        dealer_natural = dealer_blackjack and self.deck.hand_size("dealer") == 2
         player_adv = player_value - dealer_value
 
         # compare
@@ -193,9 +192,7 @@ class BlackJack(gym.Env):
         """Resets a game, but not the entire env."""
         self.curr_game += 1
         self.curr_round = 0
-        self.deck.discard_hands()
-        self.player_hand.clear()
-        self.dealer_hand.clear()
+        self.deck.discard_all()
 
     def step(self, action):
         reward = 0
@@ -210,11 +207,11 @@ class BlackJack(gym.Env):
             game_done = False
             if self.action_phase == Phase.BET:
                 result = self.bet(action)
-                self.obs, self.info = self.build_obs_infos()
+                self.obs, self.info = self.build_obs_infos(result)
                 self.action_phase = Phase.DEAL
             elif self.action_phase == Phase.DEAL or self.action_phase == Phase.PAYOUT:
                 self.deal(action)
-                self.obs, self.info = self.build_obs_infos()
+                self.obs, self.info = self.build_obs_infos(result)
                 self.action_phase = Phase.PLAY
             elif self.action_phase == Phase.PLAY:
                 reward, game_done, result = self.play(action)
@@ -222,7 +219,7 @@ class BlackJack(gym.Env):
                     self.action_phase = Phase.PAYOUT
                 if reward != 0:
                     assert self.action_phase == Phase.PAYOUT
-                self.obs, self.info = self.build_obs_infos()
+                self.obs, self.info = self.build_obs_infos(result)
         except DeckEmptyError:
             done = True
             self.info["result"] += ", deck empty, episode over"
@@ -230,6 +227,7 @@ class BlackJack(gym.Env):
         self.curr_round += 1
 
         if game_done:
+            # Game done, reset and goes to bet phase
             self.game_reset()
             self.action_phase = Phase.BET
 
@@ -242,43 +240,43 @@ class BlackJack(gym.Env):
         phase = Phase(self.obs["phase"]).name
         print(f"Phase: {phase}")
         print(f"Current Bet: {self.info['current_bet']}")
-        dealer = self.deck.ids_to_renders(self.info["dealer_hand"])
-        player = self.deck.ids_to_renders(self.info["player_hand"])
-        dealer_val = self.hand_value(self.info["dealer_hand"])
-        player_val = self.hand_value(self.info["player_hand"])
+        dealer = self.deck.visualize_idx(self.info["dealer_hand_idx"])
+        player = self.deck.visualize_idx(self.info["player_hand_idx"])
+        dealer_val = self.deck.value_idx(self.info["dealer_hand_idx"])
+        player_val = self.deck.value_idx(self.info["player_hand_idx"])
         print(f"dealer hand (sum={dealer_val}):\n{dealer}")
         print(f"player hand (sum={player_val}):\n{player}")
         print(self.info["result"])
         print("_______________________________")
 
-    def build_obs_infos(self):
+    def build_obs_infos(self, result=""):
         # Convert card ids to color, suit, rank
-        dealer_hand = np.zeros(self.max_rounds, dtype=np.int32)
-        for i, c in enumerate(self.dealer_hand):
-            dealer_hand[i] = self.deck.id_to_obs(c)
+        dealer = self.deck.show("dealer", ["ranks_idx"], pad_to=self.max_rounds)[0]
+        dealer_size = self.deck.hand_size("dealer")
         dealer_hand_cards_in_play = np.zeros(self.max_rounds, dtype=np.int8)
-        dealer_hand_cards_in_play[: len(self.dealer_hand)] = 1
+        dealer_hand_cards_in_play[:dealer_size] = 1
 
         # Convert card ids to color, suit, rank
-        player_hand = np.zeros(self.max_rounds, dtype=np.int32)
-        for i, c in enumerate(self.player_hand):
-            player_hand[i] = self.deck.id_to_obs(c)
+        player = self.deck.show("player", ["ranks_idx"], pad_to=self.max_rounds)[0]
+        player_size = self.deck.hand_size("player")
         player_hand_cards_in_play = np.zeros(self.max_rounds, dtype=np.int8)
-        player_hand_cards_in_play[: len(self.player_hand)] = 1
+        player_hand_cards_in_play[:player_size] = 1
 
         obs: Dict[str, Any] = {
             "phase": self.action_phase.value,
-            "dealer_hand": dealer_hand,
+            "dealer_hand": dealer.copy(),
             "dealer_hand_cards_in_play": dealer_hand_cards_in_play,
-            "player_hand": player_hand,
+            "player_hand": player.copy(),
             "player_hand_cards_in_play": player_hand_cards_in_play,
         }
         infos: Dict[str, Any] = {
             "phase": self.action_phase,
             "current_bet": self.curr_bet,
-            "dealer_hand": copy.deepcopy(self.dealer_hand),
-            "player_hand": copy.deepcopy(self.player_hand),
-            "result": "",
+            "dealer_hand_idx": self.deck.show("dealer", ["idx"])[0],
+            "dealer_value": self.deck.value("dealer"),
+            "player_hand_idx": self.deck.show("player", ["idx"])[0],
+            "player_value": self.deck.value("player"),
+            "result": result,
         }
 
         return obs, infos
@@ -329,3 +327,4 @@ if __name__ == "__main__":
         obs, reward, done, info = game.step(action_dict)
         phase = obs["phase"]
         game.render()
+        print(info)

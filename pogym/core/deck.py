@@ -1,7 +1,5 @@
 import copy
-import itertools
-from enum import Enum
-from typing import List
+from typing import Callable, List
 
 import gym
 import numpy as np
@@ -59,14 +57,14 @@ def ascii_version_of_card(ranks, suits, return_string=True):
         return result
 
 
-class CardRepr(Enum):
-    FULL = 0
-    SUITS_AND_RANKS = 1
-    RANKS = 2
-
-
 class DeckEmptyError(Exception):
     pass
+
+
+RANKS = np.array(["a", "2", "3", "4", "5", "6", "7", "8", "9", "10", "j", "q", "k"])
+SUITS = np.array(["s", "d", "c", "h"])
+COLORS = np.array(["b", "r"])
+DECK_SIZE = 52
 
 
 class Deck:
@@ -75,137 +73,192 @@ class Deck:
     A deck can represent a single deck or multiple decks
     """
 
-    # Spades, hearts, clubs, and diamonds
-    colors = ["r", "b"]
-    suits = ["s", "d", "h", "c"]
-    # ace, 2, 3, .... jack, queen, king
-    ranks = ["a", "2", "3", "4", "5", "6", "7", "8", "9", "10", "j", "q", "k"]
-    num_unique_cards = len(suits) * len(ranks)
+    def get_obs_space(self, fields=["colors", "suits", "ranks"]):
+        space = []
+        for f in fields:
+            if f == "colors":
+                space.append(gym.spaces.Discrete(COLORS.size))
+            elif f == "suits":
+                space.append(gym.spaces.Discrete(SUITS.size))
+            elif f == "ranks":
+                space.append(gym.spaces.Discrete(RANKS.size))
+            else:
+                raise Exception(f"Invalid field: {f}")
+        if len(space) == 1:
+            # Unsqueeze
+            return space[0]
 
-    def get_obs_space(self):
-        if self.card_repr == CardRepr.FULL:
-            return gym.spaces.Tuple(
-                (
-                    gym.spaces.Discrete(len(self.colors)),  # color
-                    gym.spaces.Discrete(len(self.suits)),  # suit
-                    gym.spaces.Discrete(len(self.ranks)),  # rank
-                )
-            )
-        elif self.card_repr == CardRepr.SUITS_AND_RANKS:
-            return gym.spaces.Tuple(
-                (
-                    gym.spaces.Discrete(len(self.suits)),  # suit
-                    gym.spaces.Discrete(len(self.ranks)),  # rank
-                )
-            )
-        elif self.card_repr == CardRepr.RANKS:
-            return gym.spaces.Discrete(len(self.ranks))
+        return gym.spaces.Tuple(space)
 
-    def __init__(self, num_decks=1, card_repr: CardRepr = CardRepr.FULL):
+    def __init__(self, num_decks=1, shuffle=True):
         self.num_decks = num_decks
-        single_deck = list(itertools.product(self.suits, self.ranks))
-        self.card_values = list(range((len(single_deck))))
-        self.card_ids = list(range(len(single_deck) * num_decks))
-        self.card_repr = card_repr
+        self.num_cards = DECK_SIZE * num_decks
+        self.idx = np.arange(self.num_cards)
 
-        # Deck is represented as a stack
-        self.deck = copy.deepcopy(self.card_ids)
-        self.in_play: List[int] = []
-        self.discard: List[int] = []
+        self.ranks = np.tile(RANKS.repeat(SUITS.size), num_decks)
+        self.ranks_idx = np.tile(np.arange(RANKS.size).repeat(SUITS.size), num_decks)
 
-        self._str_to_id = dict(zip(itertools.cycle(single_deck), self.card_ids))
-        self._id_to_str = dict(zip(self.card_ids, itertools.cycle(single_deck)))
+        self.suits = np.tile(np.tile(SUITS, RANKS.size), num_decks)
+        self.suits_idx = np.tile(np.tile(np.arange(SUITS.size), RANKS.size), num_decks)
 
-        self._str_to_val = dict(zip(single_deck, self.card_values))
-        self._val_to_str = dict(zip(self.card_values, itertools.cycle(single_deck)))
+        self.colors = np.tile(COLORS, self.num_cards // 2)
+        self.colors_idx = np.tile(np.arange(COLORS.size), self.num_cards // 2)
+        self.hands = {}
+        # The length of the deck, which decreases as cards
+        # are drawn/dealt
+        self.deck_len = self.num_cards
+        if shuffle:
+            np.random.shuffle(self.idx)
 
-        self._id_to_val = dict(zip(self.card_ids, itertools.cycle(self.card_values)))
-        self.card_obs_space = self.get_obs_space()
+        assert self.idx.size == self.num_cards
+        assert self.ranks.size == self.num_cards
+        assert self.suits.size == self.num_cards
+        assert self.colors.size == self.num_cards
+        assert self.ranks_idx.size == self.num_cards
+        assert self.suits_idx.size == self.num_cards
+        assert self.colors_idx.size == self.num_cards
+
+        self.keys = ["idx", "ranks", "suits", "colors"]
+        self.idx_keys = ["ranks_idx", "suits_idx", "colors_idx", "idx"]
+
+    def define_hand_value(
+        self, fn: Callable[[List[str]], int], fields: List[str]
+    ) -> None:
+        """Pass in a function to be used to define the value of a hand
+        or set of cards"""
+        self.value_fn = fn
+        for f in fields:
+            assert f in self.keys, f"{f} is not {self.keys}"
+        self.value_fn_args = fields
+
+    def clone(self) -> "Deck":
+        return copy.deepcopy(self)
+
+    def value(self, player: str) -> int:
+        """Returns the value of a players hand by calling the function passed
+        to define_hand_value"""
+        assert hasattr(
+            self, "value_fn"
+        ), "Must specify a value fn using define_hand_value first!"
+
+        args = []
+        for arg in self.value_fn_args:
+            idx = self.hands[player]
+            args.append(self[arg][idx])
+
+        # Numpy will attempt to unpack an ndarray
+        # if it is the only element in a list
+        # when using a starred expression
+        # i.e. len([np.array([1,2,3]])) == 3
+        if len(args) == 1:
+            return self.value_fn(args[0])
+        else:
+            return self.value_fn(*args)
+
+    def value_idx(self, idx: List[int]) -> int:
+        """Returns the value of a selection of cards"""
+        assert hasattr(
+            self, "value_fn"
+        ), "Must specify a value fn using define_hand_value first!"
+        args = []
+        for arg in self.value_fn_args:
+            args.append(self[arg][idx])
+
+        return self.value_fn(*args)
 
     def __len__(self):
-        return len(self.deck)
+        return self.deck_len
 
-    def draw(self):
-        """Draws a single card from the deck, returning the card id.
+    def __getitem__(self, item):
+        assert item in [*self.keys, *self.idx_keys, *self.hands.keys()]
+        if item in [*self.keys, *self.idx_keys]:
+            return getattr(self, item)
+        else:
+            return self.hands[item]
 
-        Will error if the deck is empty, make sure to check
-        len(Deck.deck) before calling.
-        """
-        try:
-            card_id = self.deck.pop()
-            self.in_play.append(card_id)
-            return card_id
-        except IndexError:
+    def add_players(self, *players: List[str]) -> None:
+        for player in players:
+            self.hands[player] = []
+
+    def deal(self, player: str, num_cards: int = 1) -> None:
+        """Deals a number of cards to the specified player
+        from the deck"""
+        new_len = self.deck_len - num_cards
+        if new_len < 0:
             raise DeckEmptyError()
 
-    def discard_hands(self):
-        """Discards all cards that have been drawn by placing them into the
-        discard pile."""
-        self.discard += self.in_play
-        self.in_play.clear()
+        self.hands[player] += self.idx[new_len : self.deck_len].tolist()
+        self.deck_len = new_len
+
+    def discard_hands(self, *players: List[str]):
+        """Discards the cards in the hand of a player. Note that
+        these cards do not go back into the deck. Call reset()
+        to fold the hands back into the deck"""
+        for player in players:
+            self.hands[player].clear()
+
+    def discard_all(self):
+        """Discards the cards in all player hands. Note that
+        these cards do not go back into the deck. Call reset()
+        to fold the hands back into the deck"""
+        for player in self.hands:
+            self.hands[player].clear()
+
+    def discard(self, player: str, hand_idx: int):
+        """Discards one card in the players hand at the specified idx.
+        Note this idx refers to the idx of the card in the hand, rather
+        than the idx of the card in the deck"""
+        self.hands[player].pop(hand_idx)
 
     def reset(self, shuffle=True):
-        """Discards all current cards in play, then adds the discarded pile to
-        the back of the deck.
-
-        Set shuffle=True to ensure the deck is shuffled after combining.
-        """
-        self.discard_hands()
-        # self.deck += self.discard
-        self.deck = copy.deepcopy(self.card_ids)
+        """Empties the hands of all players and places cards
+        back into the deck in their original position. Optionally
+        shuffles the deck afterwards"""
+        for hands in self.hands.values():
+            hands.clear()
+        self.deck_len = self.num_cards
         if shuffle:
-            np.random.shuffle(self.deck)
-        assert len(self.deck) == 52 * self.num_decks
+            np.random.shuffle(self.idx)
 
-    def str_to_id(self, string):
-        return self._str_to_id[string]
+    def show(
+        self, player: str, fields: List[str] = ["colors", "suits", "ranks"], pad_to=None
+    ) -> List[np.ndarray]:
+        """Shows the hand of the player, returning the fields specified of the cards
+        they hold. Optionally zero-pad to a size."""
+        reprs = []
+        if pad_to is not None:
+            padding = [0] * (pad_to - len(self.hands[player]))
+        else:
+            padding = []
+        hand_idx = np.array(self.hands[player] + padding, dtype=np.int64)
+        for f in fields:
+            assert f in [*self.idx_keys, *self.keys], f"{f} is not a valid key"
+            arr = getattr(self, f)
+            # Special case, do not double index indices
+            if f == "idx":
+                reprs.append(np.array(hand_idx))
+            else:
+                # Requires indexing
+                reprs.append(arr[hand_idx])
 
-    def strs_to_ids(self, strings):
-        return [self._str_to_id[s] for s in strings]
+        return np.stack(reprs)
 
-    def id_to_str(self, card_id):
-        return self._id_to_str[card_id]
+    def hand_size(self, player: str) -> int:
+        return len(self.hands[player])
 
-    def str_to_val(self, string):
-        return self._str_to_val[string]
-
-    def val_to_str(self, card_val):
-        return self._val_to_str[card_val]
-
-    def id_to_val(self, card_id):
-        return self._id_to_val[card_id]
-
-    def id_to_obs(self, card_id):
-        string = self.id_to_str(card_id)
-        suit, rank = string
-        suit_idx = self.suits.index(suit)
-        rank_idx = self.ranks.index(rank)
-        color_idx = 0 if suit in ["h", "d"] else 1
-        if self.card_repr == CardRepr.FULL:
-            return np.array((color_idx, suit_idx, rank_idx))
-        elif self.card_repr == CardRepr.SUITS_AND_RANKS:
-            return np.array((suit_idx, rank_idx))
-        elif self.card_repr == CardRepr.RANKS:
-            return np.array((rank_idx))
-
-    def id_to_viz(self, card_id):
-        string = self.id_to_str(card_id)
-        suit, rank = string
-        color = "r" if suit in ["h", "d"] else "b"
-        if self.card_repr == CardRepr.FULL:
-            return color, suit, rank
-        elif self.card_repr == CardRepr.SUITS_AND_RANKS:
-            return suit, rank
-        elif self.card_repr == CardRepr.RANKS:
-            return rank
-
-    def ids_to_renders(self, card_ids):
-        strs = [self.id_to_str(c) for c in card_ids]
-        if len(strs) == 0:
+    def visualize(self, player: str) -> str:
+        """Returns a string visualization of a player's hand, for printing
+        to the terminal"""
+        if len(self[player]) == 0:
             return "\n".join([""] * 10)
-        suits, ranks = zip(*strs)
+        ranks, suits = self.show(player, ["ranks", "suits"])
         return ascii_version_of_card(ranks, suits)
 
-    def obs_to_viz(self, obs):
-        color_idx, suit_idx, rank_idx = obs
-        return self.colors[color_idx], self.suits[suit_idx], self.ranks[rank_idx]
+    def visualize_idx(self, idx: List[int]) -> str:
+        """Returns a string visualization of the following idx,
+        referring to cards in the hand or deck"""
+        if len(idx) == 0:
+            return "\n".join([""] * 10)
+        suits = self["suits"][idx]
+        ranks = self["ranks"][idx]
+        return ascii_version_of_card(ranks, suits)

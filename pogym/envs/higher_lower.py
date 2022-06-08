@@ -3,7 +3,16 @@ from typing import Any, Dict, Optional, Tuple, Union
 import gym
 import numpy as np
 
-from pogym.core.deck import CardRepr, Deck
+from pogym.core.deck import Deck
+
+
+def value_fn(hand):
+    if hand[-1] > hand[-2]:
+        return 1
+    elif hand[-1] == hand[-2]:
+        return 0
+    else:
+        return -1
 
 
 class HigherLower(gym.Env):
@@ -22,9 +31,10 @@ class HigherLower(gym.Env):
 
     def __init__(self, num_decks=1):
         self.num_decks = num_decks
-        self.deck = Deck(num_decks, card_repr=CardRepr.RANKS)
+        self.deck = Deck(num_decks)
+        self.deck.add_players("player")
         self.action_space = gym.spaces.Discrete(2)
-        self.observation_space = self.deck.card_obs_space
+        self.observation_space = self.deck.get_obs_space(["ranks"])
         self.value_map = dict(zip(self.deck.ranks, range(len(self.deck.ranks))))
         self.deck_size = len(self.deck)
 
@@ -35,9 +45,13 @@ class HigherLower(gym.Env):
         else:
             done = False
 
-        next_card = self.deck.draw()
-        next_value = self.value_map[self.deck.id_to_str(next_card)[1]]
-        curr_value = self.value_map[self.deck.id_to_str(self.curr_card)[1]]
+        self.deck.deal("player", 1)
+        assert self.deck.hand_size("player") == 2
+        curr_idx, next_idx = self.deck["player"]
+        curr_value, next_value = self.deck["ranks_idx"][[curr_idx, next_idx]]
+        # next_card = self.deck.draw()
+        # next_value = self.value_map[self.deck.id_to_str(next_card)[1]]
+        # curr_value = self.value_map[self.deck.id_to_str(self.curr_card)[1]]
 
         rew_scale = 1 / self.deck_size
         if next_value == curr_value:
@@ -53,15 +67,18 @@ class HigherLower(gym.Env):
         else:
             raise Exception("Should not reach this point")
 
-        info = {
-            "previous": self.deck.id_to_viz(self.curr_card),
-            "current": self.deck.id_to_viz(next_card),
-        }
+        # info = {
+        # "previous": self.deck.id_to_viz(self.curr_card),
+        # "current": self.deck.id_to_viz(next_card),
+        # }
 
-        self.curr_card = next_card
-        obs = self.deck.id_to_obs(self.curr_card).item()
+        viz = np.stack(self.deck.show("player", ["suits", "ranks"])).T
+        self.deck.discard("player", 0)
+        # self.curr_card = next_card
+        # obs = self.deck.id_to_obs(self.curr_card).item()
+        obs = self.deck.show("player", ["ranks_idx"]).item()
 
-        return obs, reward, done, info
+        return obs, reward, done, {"card": viz}
 
     def reset(
         self,
@@ -74,9 +91,12 @@ class HigherLower(gym.Env):
             np.random.seed(seed)
 
         self.deck.reset()
-        self.curr_card = self.deck.draw()
-        obs = self.deck.id_to_obs(self.curr_card).item()
+        self.deck.deal("player", 1)
+        obs = self.deck.show("player", ["ranks_idx"]).item()
+        viz = np.concatenate(self.deck.show("player", ["suits", "ranks"]))
+        # self.curr_card = self.deck.draw()
+        # obs = self.deck.id_to_obs(self.curr_card).item()
         if return_info:
-            return obs, {}
+            return obs, {"card": viz}
 
         return obs
