@@ -1,8 +1,4 @@
-try:
-	from pogym.envs.grid_drive.lib.culture_lib.argument import Argument, ArgumentationFramework
-except Exception as e:
-	print('Warning: graph-tool not installed, using old Argumentation Framework.')
-	from pogym.envs.grid_drive.lib.culture_lib.argument_old import Argument, ArgumentationFramework
+from pogym.envs.grid_drive.lib.culture_lib.argument import Argument, ArgumentationFramework
 
 class Culture:
 	def __init__(self):
