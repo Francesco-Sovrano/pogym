@@ -1,7 +1,4 @@
 numpy
-gym[box2d]==0.21.0 # cannot import gym rendering with gym 0.24
+gym[box2d]==0.24.0
 pygame # unlisted dependency of gym
-
-#### GridDrive stuff # unlisted dependencies
-matplotlib
-pyglet==1.5.11 # fixing rendering, this can be removed if rendering is rewritten using pygame
+matplotlib # dependency of GridDrive

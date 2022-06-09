@@ -11,6 +11,7 @@ from matplotlib.figure import Figure
 from matplotlib.patches import Circle, Rectangle
 from matplotlib.collections import PatchCollection
 from matplotlib.lines import Line2D
+from PIL import Image
 
 from pogym.envs.grid_drive.lib.road_grid import RoadGrid
 from pogym.envs.grid_drive.lib.road_cultures import *
@@ -243,11 +244,10 @@ class GridDrive(gym.Env):
 		if mode == 'rgb_array':
 			return img
 		elif mode == 'human':
-			if self.viewer is None:
-				from gym.envs.classic_control import rendering
-				self.viewer = rendering.SimpleImageViewer()
-			self.viewer.imshow(img)
-			return self.viewer.isopen
+			viewer = Image.fromarray(img)
+			viewer.show()
+			viewer.close()
+			return True
 
 	@property
 	def visiting_old_cell(self):
