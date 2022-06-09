@@ -1,4 +1,4 @@
-from pogym.envs.grid_drive.utils.culture_lib.culture import Culture, Argument
+from pogym.envs.grid_drive.lib.culture_lib.culture import Culture, Argument
 from pogym.envs.grid_drive.lib.road_cell import RoadCell
 from pogym.envs.grid_drive.lib.road_agent import RoadAgent
 import numpy as np
